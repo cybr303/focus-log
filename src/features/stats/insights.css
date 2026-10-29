@@ -1,0 +1,37 @@
+/* Insights page: range switcher, totals, chart cards, module breakdown. */
+
+.seg { display: flex; padding: 2px; border-radius: 10px; background: var(--surface-2); }
+.seg-btn { flex: 1; height: 34px; border-radius: 8px; font-size: 15px; font-weight: 500; color: var(--text-2); transition: background 0.15s; }
+.seg-btn.on { background: var(--surface-3); color: var(--text); font-weight: 600; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); }
+
+.ins-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.ins-total { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 12px; min-width: 0; }
+.ins-total-value { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ins-total-label { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+
+.ins-card { padding: 16px 12px 14px; }
+.ins-caption { margin: 10px 4px 0; font-size: 15px; color: var(--text-2); }
+.ins-caption b { color: var(--text); }
+.ins-empty { padding: 28px 12px; font-size: 15px; }
+
+/* Recharts on black */
+.ins-card .recharts-wrapper, .ins-card svg { outline: none; }
+.chart-tip { background: rgba(44, 44, 46, 0.96); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+.chart-tip-title { font-size: 12px; color: var(--text-2); }
+.chart-tip-value { font-size: 15px; font-weight: 700; color: var(--text); }
+
+/* Module breakdown */
+.mb-list { display: flex; flex-direction: column; gap: 4px; }
+.mb-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 4px; text-align: left; border-radius: 12px; }
+.mb-row:active { background: rgba(255, 255, 255, 0.04); }
+.mb-main { flex: 1; min-width: 0; }
+.mb-top { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; margin-bottom: 6px; }
+.mb-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mb-value { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mb-track { height: 8px; border-radius: 999px; overflow: hidden; }
+.mb-track.thin { height: 5px; }
+.mb-fill { height: 100%; border-radius: inherit; min-width: 4px; }
+.mb-chev { color: var(--text-3); font-size: 20px; transition: transform 0.15s; }
+.mb-chev.open { transform: rotate(90deg); }
+.mb-topics { margin: 2px 28px 10px 48px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.mb-topic .mb-top { font-size: 14px; margin-bottom: 4px; }

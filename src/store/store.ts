@@ -145,3 +145,6 @@ export const useStore = create<Store>()(
 
 /** Lookup helpers usable inside components: `const mod = useStore(selectModule(id))`. */
 export const selectModule = (id: ID | undefined) => (s: Store) => s.modules.find((m) => m.id === id)
+
+// Dev-only handle for debugging in the browser console.
+if (import.meta.env.DEV) (window as unknown as { __store: typeof useStore }).__store = useStore

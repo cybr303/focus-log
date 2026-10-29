@@ -1,0 +1,93 @@
+/* Modules, module detail, settings */
+
+/* ---------- Modules list ---------- */
+.mod-add { background: var(--accent); color: #fff; margin-top: 8px; }
+.mod-row { min-height: 72px; }
+.mod-row-text { flex: 1; min-width: 0; }
+.mod-row-name { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mod-row-meta { font-size: 14px; margin-top: 2px; }
+.mod-exam {
+  display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--text-2);
+}
+.mod-exam.is-soon { background: rgba(255, 159, 10, 0.18); color: #ff9f0a; }
+.mod-exam.is-past { color: var(--text-3); }
+
+.mod-empty { text-align: center; padding: 40px 24px; display: flex; flex-direction: column; align-items: center; }
+.mod-empty-art { font-size: 56px; margin-bottom: 8px; filter: drop-shadow(0 0 24px rgba(100, 160, 255, 0.45)); }
+.mod-empty h2 { margin: 4px 0 6px; font-size: 22px; }
+.mod-empty p { margin: 0 0 20px; max-width: 300px; line-height: 1.4; }
+
+/* ---------- Module form ---------- */
+.mf-preview { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
+.mf-preview-name { font-size: 20px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-error { color: var(--danger); font-size: 14px; padding-left: 4px; }
+.mf-save:disabled { opacity: 0.4; }
+.mf-swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.mf-swatch {
+  width: 40px; height: 40px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+  transition: transform 0.1s;
+}
+.mf-swatch svg { color: #000; }
+.mf-swatch[aria-checked='true'] { box-shadow: 0 0 0 3px #1c1c1e, 0 0 0 5px currentColor; }
+.mf-swatch:active { transform: scale(0.9); }
+.mf-emojis { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; }
+.mf-emoji {
+  height: 44px; border-radius: 12px; background: var(--surface-2); font-size: 22px;
+  border: 2px solid transparent; text-align: center; padding: 0; width: 100%; min-width: 0; outline: none;
+}
+.mf-emoji[aria-checked='true'], .mf-emoji.is-on { border-color: var(--accent); background: rgba(10, 132, 255, 0.18); }
+.mf-emoji-custom::placeholder { color: var(--text-3); }
+.mf-emoji-custom:focus { border-color: var(--accent); }
+
+/* ---------- Module detail ---------- */
+.md-back { display: inline-flex; align-items: center; gap: 2px; margin-left: -6px; height: 44px; }
+.md-header {
+  display: flex; align-items: center; gap: 16px; margin: 12px 0 16px; padding: 20px;
+  border-radius: var(--radius); border: 1px solid var(--border);
+}
+.md-title { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.3px; word-break: break-word; }
+.md-exam { font-size: 15px; margin-top: 4px; }
+.md-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.md-stat { padding: 14px 16px; }
+.md-stat-value { font-size: 22px; font-weight: 700; }
+.md-stat-label { font-size: 13px; margin-top: 2px; }
+.md-session-text { flex: 1; min-width: 0; }
+.md-session-date { font-size: 16px; font-weight: 500; }
+.md-session-topics { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.md-session-side { text-align: right; }
+.md-session-dur { font-weight: 600; font-variant-numeric: tabular-nums; }
+.md-stars { font-size: 12px; color: var(--warning); letter-spacing: 1px; }
+.md-more { display: block; margin: 12px auto 0; }
+
+/* ---------- Topics ---------- */
+.topic-count { font-size: 15px; font-weight: 400; }
+.topic-add { display: flex; gap: 8px; margin-bottom: 12px; }
+.topic-add .btn { height: 50px; flex-shrink: 0; }
+.topic-error { margin: -4px 0 12px; }
+.topic-empty { padding: 24px 16px; }
+.topic-row { padding: 0 4px 0 0; }
+.topic-name { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0 14px 16px; min-height: 56px; text-align: left; }
+.topic-name span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topic-time { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.topic-delete { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-3); border-radius: 999px; }
+.topic-delete:hover, .topic-delete:active { color: var(--danger); }
+.topic-edit { padding: 8px 8px 8px 12px; }
+.topic-edit-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.topic-edit .input { height: 42px; }
+
+/* ---------- Confirm sheet ---------- */
+.confirm-message { font-size: 16px; line-height: 1.45; color: var(--text-2); margin-bottom: 20px; }
+.confirm-message strong { color: var(--text); }
+.confirm-message .confirm-warn { color: var(--danger); }
+
+/* ---------- Settings ---------- */
+.set-row { gap: 14px; }
+.set-icon { width: 32px; height: 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.set-text { display: flex; flex-direction: column; gap: 2px; font-size: 17px; }
+.set-sub { font-size: 13px; }
+.set-notice { margin-top: 12px; padding: 12px 16px; border-radius: var(--radius-sm); font-size: 15px; line-height: 1.4; }
+.set-notice.is-ok { background: rgba(48, 209, 88, 0.14); color: var(--success); }
+.set-notice.is-error { background: rgba(255, 69, 58, 0.14); color: var(--danger); }
+.set-info { line-height: 1.45; font-size: 15px; }
+.set-about { text-align: center; font-size: 13px; margin-top: 40px; }

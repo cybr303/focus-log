@@ -1,0 +1,51 @@
+/* Home statistics: streak/today header, stat cards, weekly volume. */
+
+/* ---------- StreakToday ---------- */
+.st-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.st-right { text-align: right; }
+.st-label { color: var(--text-2); font-size: 17px; display: inline-flex; gap: 4px; }
+.st-label span { color: var(--text-3); }
+.st-big {
+  font-size: 56px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; margin: 2px 0 4px;
+  display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums;
+}
+.st-right .st-big { justify-content: flex-end; }
+.st-flame { color: var(--text-3); }
+.st-flame.on { color: #ff9f0a; fill: rgba(255, 159, 10, 0.25); }
+.st-sub { color: var(--text-2); font-size: 15px; }
+.st-sub b { color: var(--text); font-weight: 700; }
+
+/* ---------- StatCards ---------- */
+.sc-scroller {
+  display: flex; gap: 12px; margin: 24px calc(-1 * var(--gutter)) 0; padding: 0 var(--gutter);
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 var(--gutter);
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.sc-scroller::-webkit-scrollbar { display: none; }
+.sc-scroller::after { content: ''; flex: 0 0 1px; }
+.sc-card {
+  flex: 0 0 auto; min-width: 150px; padding: 18px 20px 16px; border-radius: 22px;
+  scroll-snap-align: start; border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.sc-value { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.15; white-space: nowrap; }
+.sc-label { font-size: 17px; color: rgba(235, 235, 245, 0.72); margin-top: 4px; white-space: nowrap; }
+
+/* ---------- WeeklyVolume ---------- */
+.wv-head { display: flex; justify-content: space-between; align-items: flex-end; }
+.wv-label { font-size: 17px; }
+.wv-total { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; margin-top: 2px; }
+.wv-days { font-size: 15px; padding-bottom: 6px; }
+.wv-chart { position: relative; height: 150px; margin-top: 8px; }
+.wv-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wv-point { position: absolute; transform: translate(-50%, -50%); width: 0; height: 0; }
+.wv-dot {
+  position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 3px #000, 0 0 12px rgba(10, 132, 255, 0.6);
+}
+.wv-value {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  color: var(--accent); font-size: 14px; font-weight: 700; white-space: nowrap;
+}
+.wv-empty { position: absolute; left: 0; right: 0; top: 60%; margin-top: 14px; text-align: center; font-size: 15px; }
+.wv-axis { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.wv-axis .today { color: var(--text); font-weight: 600; }
