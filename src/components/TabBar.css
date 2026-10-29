@@ -1,0 +1,15 @@
+.tabbar {
+  position: fixed; z-index: 50;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--safe-bottom) + 12px);
+  width: min(calc(100% - 32px), 520px); height: var(--tabbar-h);
+  display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px;
+  background: var(--glass); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border); border-radius: 999px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+.tabbar-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--text);
+}
+.tabbar-item.active { color: var(--accent); background: rgba(0, 0, 0, 0.55); }
