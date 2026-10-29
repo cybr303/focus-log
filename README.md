@@ -28,7 +28,7 @@ npm run build    # production build in dist/
 The build is static (relative paths and hash routing), so it runs on any static host:
 
 - **Vercel / Netlify:** import the repo; build command `npm run build`, output directory `dist`.
-- **GitHub Pages:** publish the `dist/` folder, for example with the `actions/deploy-pages` workflow.
+- **GitHub Pages:** `.github/workflows/deploy.yml` tests, builds and publishes every push to `main`. Under Settings → Pages, set Source to "GitHub Actions". The app is served at `https://cybr303.github.io/focus-log/`.
 
 To install it on an iPhone, open the site in Safari, tap Share, then Add to Home Screen.
 
