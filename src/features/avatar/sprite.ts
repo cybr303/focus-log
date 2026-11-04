@@ -1,8 +1,9 @@
 /** Tiny pixel canvas used to compose the avatar from layers. */
 
-export const W = 20
-export const H = 28
-export const OUTLINE = '#14131c'
+export const W = 32
+export const H = 44
+/** Deep blue-grey line, like the soft outlines of anime pixel art (never pure black). */
+export const OUTLINE = '#1e2a3a'
 
 export type Grid = (string | null)[][]
 
@@ -43,18 +44,47 @@ export const painter = (g: Grid): Painter => {
   }
 }
 
-/** Adds a 1px outline around every filled region (4-neighbourhood). */
-export const outline = (g: Grid, color = OUTLINE): Grid => {
+/** A painter that draws everything `dy` rows lower (used to place the body under the head). */
+export const shifted = (p: Painter, dy: number): Painter => ({
+  px: (x, y, c) => p.px(x, y + dy, c),
+  rect: (x, y, w, h, c) => p.rect(x, y + dy, w, h, c),
+  map: (x, y, rows, pal) => p.map(x, y + dy, rows, pal),
+  clear: (x, y) => p.clear(x, y + dy),
+  has: (x, y) => p.has(x, y + dy),
+})
+
+/**
+ * Adds a 1px outline around every filled region (4-neighbourhood). Each outline pixel is a deep
+ * shade of the colour it borders, pulled toward `ink`, so green hair gets a dark green line and
+ * skin a warm brown one, the way hand-drawn anime pixel art does.
+ */
+export const outline = (g: Grid, ink = OUTLINE): Grid => {
   const out = g.map((row) => row.slice())
+  const cache = new Map<string, string>()
+  const lineFor = (c: string) => {
+    let l = cache.get(c)
+    if (!l) cache.set(c, (l = mix(shade(c, 0.62), ink, 0.45)))
+    return l
+  }
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       if (g[y][x]) continue
-      const near = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].some(
-        ([i, j]) => i >= 0 && i < W && j >= 0 && j < H && g[j][i],
-      )
-      if (near) out[y][x] = color
+      for (const [i, j] of [[x, y + 1], [x, y - 1], [x - 1, y], [x + 1, y]]) {
+        const c = i >= 0 && i < W && j >= 0 && j < H ? g[j][i] : null
+        if (c) {
+          out[y][x] = lineFor(c)
+          break
+        }
+      }
     }
   return out
+}
+
+/** Blends two hex colours; t = 0 gives `a`, 1 gives `b`. */
+export const mix = (a: string, b: string, t: number): string => {
+  const p = (h: string) => [16, 8, 0].map((s) => (parseInt(h.slice(1), 16) >> s) & 255)
+  const [x, y] = [p(a), p(b)]
+  return `#${x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('')}`
 }
 
 export interface Run {

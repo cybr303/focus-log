@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { STORAGE_KEY } from '../../store/store'
 import type { Session } from '../../lib/types'
 import { AVATAR_STORAGE_KEY, DEFAULT_AVATAR, parseAvatar } from './avatarStore'
-import { DEFAULT_EQUIPPED, HAIR_STYLES, ITEMS, itemById, type Slot } from './catalog'
+import { DEFAULT_EQUIPPED, HAIR_STYLES, hairStyleById, ITEMS, itemById, type Slot } from './catalog'
 import { composeAvatar } from './compose'
 import { computeProgress, isUnlocked, moodFor, resolveEquipped, ruleProgressLabel, unseenUnlocks } from './progress'
-import { H, outline, painter, emptyGrid, W } from './sprite'
+import { emptyGrid, H, mix, outline, painter, W } from './sprite'
 
 const at = (iso: string) => new Date(iso).getTime()
 const mk = (start: string, minutes: number, extra: Partial<Session> = {}): Session => ({
@@ -42,10 +42,13 @@ describe('catalog', () => {
   it('outlines around shapes without touching filled pixels', () => {
     const g = emptyGrid()
     painter(g).px(5, 5, '#fff')
-    const o = outline(g, '#000')
+    const o = outline(g, '#000000')
     expect(o[5][5]).toBe('#fff')
-    expect([o[4][5], o[6][5], o[5][4], o[5][6]]).toEqual(['#000', '#000', '#000', '#000'])
+    const line = o[4][5]
+    expect(line).not.toBeNull()
+    expect([o[6][5], o[5][4], o[5][6]]).toEqual([line, line, line])
     expect(o[4][4]).toBeNull()
+    expect(mix('#000000', '#ffffff', 0.5)).toBe('#808080')
   })
 })
 
@@ -97,6 +100,12 @@ describe('parseAvatar', () => {
   it('accepts a valid avatar and fills missing slots', () => {
     const a = parseAvatar({ name: '  Bit ', skin: 2, hairStyle: 'bob', hairColor: 3, equipped: { top: 'hoodie' }, seen: ['beanie', 4] })
     expect(a).toMatchObject({ name: 'Bit', skin: 2, hairStyle: 'bob', equipped: { top: 'hoodie', bottom: 'jeans' }, seen: ['beanie'] })
+  })
+  it('keeps hair styles from the first version of the character', () => {
+    expect(parseAvatar({ skin: 0, hairStyle: 'curly', hairColor: 0, equipped: {} })?.hairStyle).toBe('curly')
+    expect(hairStyleById('curly').id).toBe('long')
+    expect(hairStyleById('spiky').name).toBe('Wolf cut')
+    expect(parseAvatar({ skin: 0, hairStyle: 'bob', hairColor: 0, equipped: {} })?.eyeColor).toBe(0)
   })
   it('rejects garbage', () => {
     expect(parseAvatar(undefined)).toBeNull()

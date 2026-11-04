@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { DEFAULT_EQUIPPED, HAIR_COLORS, HAIR_STYLES, SKIN_TONES, type Slot } from './catalog'
+import { DEFAULT_EQUIPPED, EYE_COLORS, HAIR_COLORS, isHairStyleId, SKIN_TONES, type Slot } from './catalog'
 import type { Look } from './compose'
 
 /** Kept apart from the study data (its own localStorage key), so the avatar can never affect your sessions. */
@@ -22,8 +22,9 @@ interface AvatarActions {
 export const DEFAULT_AVATAR: AvatarData = {
   name: 'Pixel',
   skin: 1,
-  hairStyle: 'short',
-  hairColor: 1,
+  hairStyle: 'long',
+  hairColor: 0,
+  eyeColor: 0,
   equipped: { ...DEFAULT_EQUIPPED },
   seen: [],
 }
@@ -39,10 +40,12 @@ export const useAvatar = create<AvatarData & AvatarActions>()(
     }),
     {
       name: AVATAR_STORAGE_KEY,
-      version: 1,
-      partialize: ({ name, skin, hairStyle, hairColor, equipped, seen }): AvatarData => ({
-        name, skin, hairStyle, hairColor, equipped, seen,
+      version: 2,
+      partialize: ({ name, skin, hairStyle, hairColor, eyeColor, equipped, seen }): AvatarData => ({
+        name, skin, hairStyle, hairColor, eyeColor, equipped, seen,
       }),
+      // v1 had no eye colour
+      migrate: (state) => ({ eyeColor: 0, ...(state as object) }) as AvatarData,
     },
   ),
 )
@@ -55,7 +58,7 @@ export const parseAvatar = (raw: unknown): AvatarData | null => {
   const skin = int(a.skin, SKIN_TONES.length)
   const hairColor = int(a.hairColor, HAIR_COLORS.length)
   if (skin === null || hairColor === null) return null
-  if (typeof a.hairStyle !== 'string' || !HAIR_STYLES.some((h) => h.id === a.hairStyle)) return null
+  if (typeof a.hairStyle !== 'string' || !isHairStyleId(a.hairStyle)) return null
   if (!a.equipped || typeof a.equipped !== 'object') return null
   const equipped = { ...DEFAULT_EQUIPPED }
   for (const slot of Object.keys(DEFAULT_EQUIPPED) as Slot[]) {
@@ -67,6 +70,7 @@ export const parseAvatar = (raw: unknown): AvatarData | null => {
     skin,
     hairStyle: a.hairStyle,
     hairColor,
+    eyeColor: int(a.eyeColor, EYE_COLORS.length) ?? 0,
     equipped,
     seen: Array.isArray(a.seen) ? a.seen.filter((x): x is string => typeof x === 'string') : [],
   }

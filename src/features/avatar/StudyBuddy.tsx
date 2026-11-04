@@ -6,7 +6,7 @@ export function StudyBuddy({ bookColor }: { bookColor: string }) {
   const { look, mood } = useCharacter()
   return (
     <div className="study-buddy">
-      <PixelAvatar look={look} mood={mood} scale={3} book={mood === 'study' ? bookColor : undefined} />
+      <PixelAvatar look={look} mood={mood} scale={2} book={mood === 'study' ? bookColor : undefined} />
     </div>
   )
 }

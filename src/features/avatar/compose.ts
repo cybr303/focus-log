@@ -1,14 +1,18 @@
 import {
-  drawBody, drawBook, drawFace, drawMoodFx, HAIR_COLORS, HAIR_STYLES, itemById, SKIN_TONES, type Mood, type Slot,
+  drawBody, drawBook, drawHead, drawFace, drawHairBack, drawHairFront, drawMoodFx, EYE_COLORS, HAIR_COLORS, hairStyleById, itemById,
+  SKIN_TONES, type Mood, type Slot,
 } from './catalog'
-import { emptyGrid, outline, painter, toRuns, type Run } from './sprite'
+import { emptyGrid, outline, painter, shifted, toRuns, type Run } from './sprite'
 
 export interface Look {
   skin: number
   hairStyle: string
   hairColor: number
+  eyeColor: number
   equipped: Record<Slot, string>
 }
+
+const BODY_DY = 1
 
 /** Order clothes are layered in, bottom to top. */
 const LAYERS: Slot[] = ['bottom', 'shoes', 'top']
@@ -24,16 +28,21 @@ export const composeAvatar = (look: Look, mood: Mood, book?: string): { body: Ru
   const fx = painter(fxGrid)
   const skin = SKIN_TONES[look.skin] ?? SKIN_TONES[0]
   const hair = HAIR_COLORS[look.hairColor] ?? HAIR_COLORS[0]
-  const ctx = { skin, fx }
-  const wear = (slot: Slot) => itemById(look.equipped[slot])?.draw(p, ctx)
+  const style = hairStyleById(look.hairStyle)
+  // Body layers sit one row below their own coordinates, leaving the head room for a taller face.
+  const bp = shifted(p, BODY_DY)
+  const bodyCtx = { skin, fx: shifted(fx, BODY_DY) }
+  const wear = (slot: Slot, on = bp) => itemById(look.equipped[slot])?.draw(on, on === bp ? bodyCtx : { skin, fx })
 
-  drawBody(p, skin)
-  LAYERS.forEach(wear)
-  drawFace(p, mood)
-  ;(HAIR_STYLES.find((h) => h.id === look.hairStyle) ?? HAIR_STYLES[0]).draw(p, hair)
-  wear('face')
-  wear('head')
-  if (book) drawBook(p, book, skin)
+  drawHairBack(p, style, hair)
+  drawHead(p, skin)
+  drawBody(bp, skin, !book)
+  LAYERS.forEach((s) => wear(s))
+  drawFace(p, mood, EYE_COLORS[look.eyeColor] ?? EYE_COLORS[0])
+  drawHairFront(p, style, hair)
+  wear('face', p)
+  wear('head', p)
+  if (book) drawBook(bp, book, skin)
   else wear('held')
   drawMoodFx(fx, mood)
 

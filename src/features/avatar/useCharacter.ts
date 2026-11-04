@@ -3,6 +3,7 @@ import { isPaused } from '../../lib/stats'
 import { useNow } from '../../lib/useNow'
 import { useStore } from '../../store/store'
 import { useAvatar } from './avatarStore'
+import { hairStyleById } from './catalog'
 import type { Look } from './compose'
 import { computeProgress, moodFor, resolveEquipped, speechFor, unseenUnlocks } from './progress'
 
@@ -18,8 +19,8 @@ export const useCharacter = () => {
   const unseen = useMemo(() => unseenUnlocks(progress, avatar.seen), [progress, avatar.seen])
   const equipped = useMemo(() => resolveEquipped(avatar.equipped, progress), [avatar.equipped, progress])
   const look: Look = useMemo(
-    () => ({ skin: avatar.skin, hairStyle: avatar.hairStyle, hairColor: avatar.hairColor, equipped }),
-    [avatar.skin, avatar.hairStyle, avatar.hairColor, equipped],
+    () => ({ skin: avatar.skin, hairStyle: hairStyleById(avatar.hairStyle).id, hairColor: avatar.hairColor, eyeColor: avatar.eyeColor, equipped }),
+    [avatar.skin, avatar.hairStyle, avatar.hairColor, avatar.eyeColor, equipped],
   )
   const lastEnd = sessions.reduce<number | undefined>((m, s) => (m === undefined || s.end > m ? s.end : m), undefined)
   const mood = moodFor({

@@ -14,7 +14,7 @@ export function HomeAvatar() {
         </p>
       </div>
       <Link to="/wardrobe" className="home-avatar" aria-label={`Open wardrobe${unseen.length ? `, ${unseen.length} new items` : ''}`}>
-        <PixelAvatar look={look} mood={mood} scale={4} />
+        <PixelAvatar look={look} mood={mood} scale={3} />
         {unseen.length > 0 && <span className="home-avatar-badge">{unseen.length}</span>}
       </Link>
     </div>

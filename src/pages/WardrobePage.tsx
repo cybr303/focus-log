@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { useAvatar } from '../features/avatar/avatarStore'
-import { HAIR_COLORS, HAIR_STYLES, ITEMS, SKIN_TONES, SLOTS, type Item, type Slot } from '../features/avatar/catalog'
+import { EYE_COLORS, HAIR_COLORS, HAIR_STYLES, ITEMS, SKIN_TONES, SLOTS, type Item, type Slot } from '../features/avatar/catalog'
 import type { Look } from '../features/avatar/compose'
 import { PixelAvatar } from '../features/avatar/PixelAvatar'
 import { isUnlocked, ruleLabel, ruleProgressLabel, unlockFraction } from '../features/avatar/progress'
@@ -43,7 +43,7 @@ export function WardrobePage() {
 
       <div className="card wr-stage">
         <div className="wr-glow" />
-        <PixelAvatar look={look} mood={mood} scale={8} />
+        <PixelAvatar look={look} mood={mood} scale={6} />
         <input
           className="wr-name"
           value={avatar.name}
@@ -110,7 +110,7 @@ function ItemTile({
       aria-pressed={selected}
     >
       {isNew && <span className="wr-new">NEW</span>}
-      <PixelAvatar look={preview} scale={3} animate={false} className="wr-tile-art" />
+      <PixelAvatar look={preview} scale={2} animate={false} className="wr-tile-art" />
       <span className="wr-tile-name">{item.name}</span>
       {!unlocked && item.unlock && (
         <span className="wr-lock">
@@ -141,11 +141,18 @@ function BodyTab({ look }: { look: Look }) {
         ))}
       </div>
 
+      <h2 className="section-title wr-sub">Eyes</h2>
+      <div className="wr-swatches">
+        {EYE_COLORS.map((c, i) => (
+          <button key={c} className={`wr-swatch ${look.eyeColor === i ? 'is-on' : ''}`} style={{ background: c }} aria-label={`Eye colour ${i + 1}`} aria-pressed={look.eyeColor === i} onClick={() => setLook({ eyeColor: i })} />
+        ))}
+      </div>
+
       <h2 className="section-title wr-sub">Hair style</h2>
       <div className="wr-grid">
         {HAIR_STYLES.map((h) => (
           <button key={h.id} className={`wr-tile ${look.hairStyle === h.id ? 'is-on' : ''}`} aria-pressed={look.hairStyle === h.id} onClick={() => setLook({ hairStyle: h.id })}>
-            <PixelAvatar look={{ ...look, hairStyle: h.id }} scale={3} animate={false} className="wr-tile-art" />
+            <PixelAvatar look={{ ...look, hairStyle: h.id }} scale={2} animate={false} className="wr-tile-art" />
             <span className="wr-tile-name">{h.name}</span>
           </button>
         ))}
