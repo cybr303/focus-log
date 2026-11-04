@@ -1,4 +1,4 @@
-import { shade, type Painter } from './sprite'
+import { DX, mix, shade, type Painter } from './sprite'
 
 /*
  * Chibi anime pixel art on a 32×44 canvas: big head on top, small body below.
@@ -17,14 +17,15 @@ export const HAIR_COLORS = [
 
 export const EYE_COLORS = ['#3F7FBF', '#3F9A6E', '#9B5FD6', '#7A4A2E', '#D65F8E', '#4A4E6A'] as const
 
-export type Slot = 'top' | 'bottom' | 'shoes' | 'head' | 'face' | 'held'
+export type Slot = 'top' | 'bottom' | 'shoes' | 'head' | 'face' | 'held' | 'back'
 
 export const SLOTS: { slot: Slot; label: string }[] = [
   { slot: 'top', label: 'Tops' },
   { slot: 'bottom', label: 'Bottoms' },
   { slot: 'shoes', label: 'Shoes' },
   { slot: 'head', label: 'Head' },
-  { slot: 'face', label: 'Glasses' },
+  { slot: 'face', label: 'Face' },
+  { slot: 'back', label: 'Back' },
   { slot: 'held', label: 'Hands' },
 ]
 
@@ -55,6 +56,10 @@ export interface Item {
   /** Missing rule = free from the start. */
   unlock?: Rule
   draw: (p: Painter, ctx: DrawCtx) => void
+  /** Drawn after the hair, in canvas coordinates (a hood pulled up, a robotic arm). */
+  over?: (p: Painter, ctx: DrawCtx) => void
+  /** Slots this item covers completely, which are then not drawn (a one-piece hides bottoms). */
+  hides?: Slot[]
 }
 
 /** Base, shadow, deep line and highlight tones for a colour. */
@@ -392,96 +397,147 @@ const ring = (c: string, corners: boolean) => (p: Painter) => {
   }
 }
 
+const NEON = '#38E1FF'
+const PINK = '#FF4FD8'
+const INK = '#2A2D3A'
+const METAL = '#A7B1C2'
+const METAL_DK = '#6C7689'
+
+/** Hood pulled up over the head (canvas coordinates; drawn over the hair). */
+const hoodUp = (c: string, ears?: string) => (p: Painter) => {
+  const t = tones(c)
+  for (const [y, a, b] of [[1, 9, 22], [2, 7, 24], [3, 5, 26], [4, 4, 27], [5, 3, 28], [6, 3, 28], [7, 3, 28]])
+    p.rect(a, y, b - a + 1, 1, t.c)
+  p.rect(10, 2, 6, 1, t.lt)
+  p.rect(8, 7, 16, 1, t.dk) // rim over the forehead
+  for (let y = 8; y <= 23; y++) {
+    p.rect(3, y, 5, 1, t.c)
+    p.rect(24, y, 5, 1, t.c)
+    p.px(7, y, t.dk)
+    p.px(24, y, t.dk)
+  }
+  if (ears) {
+    p.map(5, 0, ['#....', '##...', '#e#..', '#ee#.'], { '#': t.c, e: ears })
+    p.map(23, 0, ['....#', '...##', '..#e#', '.#ee#'], { '#': t.c, e: ears })
+  }
+}
+
+/** Over-ear headset; `ears` adds cat ears on the band, `mic` a boom mic. */
+const headset = (o: { band: string; cup: string; ring: string; ears?: string; mic?: boolean }) => (p: Painter) => {
+  p.rect(10, 1, 12, 1, o.band)
+  p.rect(8, 2, 2, 1, o.band)
+  p.rect(22, 2, 2, 1, o.band)
+  p.rect(6, 3, 2, 1, o.band)
+  p.rect(24, 3, 2, 1, o.band)
+  p.rect(5, 4, 1, 6, o.band)
+  p.rect(26, 4, 1, 6, o.band)
+  for (const x of [1, 26]) {
+    p.rect(x, 9, 5, 9, o.cup)
+    p.rect(x + 1, 11, 3, 5, o.ring)
+    p.rect(x + 2, 12, 1, 3, o.cup)
+  }
+  if (o.ears) {
+    p.map(6, 0, ['#...', '##..', '#e#.', '#ee#'], { '#': o.band, e: o.ears })
+    p.map(22, 0, ['...#', '..##', '.#e#', '#ee#'], { '#': o.band, e: o.ears })
+  }
+  if (o.mic) {
+    for (const [x, y] of [[25, 17], [24, 18], [23, 19]]) p.px(x, y, o.cup)
+    p.rect(21, 19, 2, 2, o.ring)
+  }
+}
+
+/** Mirrors an ASCII map left-to-right. */
+const flip = (rows: string[]) => rows.map((r) => [...r].reverse().join(''))
+
+/** A pair of wings reaching into the canvas margins (x < 0 and x > 31 in art coordinates). */
+const wings = (rows: string[], pal: Record<string, string>, y: number) => (p: Painter) => {
+  p.map(-DX, y, rows, pal)
+  p.map(32 + DX - rows[0].length, y, flip(rows), pal)
+}
+
+const ANGEL = [
+  '..........WW', '........WWWW', '......WWWWWW', '....WWWWWWWW', '..WWWWWWWWWW', '.WWWWWWWWWWW', 'WWWWWWWWWWWW',
+  'WSSWWWWWWWWW', '.WWSSWWWWWWW', 'WSSWWSSWWWWW', '.WWSSWWSSWWW', '..SWWSSWWSWW', '...SWWSWWSW.', '....SW.SW...', '.....S......',
+]
+const BAT = [
+  '...........#', '.........###', '.......#####', '.....#######', '...#########', '.###########', '############',
+  '#mmm#mmm####', '#mmm#mmm####', '.mm.#mm.####', '.m...m..m###', '.........m##', '..........m#',
+]
+const CYBER_WING = [
+  '..........FF', '........FFNF', '......FFNNNF', '....FFNnNNNF', '..FFNNnNNNNF', 'FFFFFFFFFFFF', '.FFNNnNNNNF.', '...FFNNNNF..', '.....FFFF...',
+]
+
 const none = (slot: Slot): Item => ({ id: `${slot}-none`, name: 'None', slot, draw: () => {} })
 
 export const ITEMS: Item[] = [
   // Tops
   { id: 'tee-white', name: 'White tee', slot: 'top', draw: top({ c: '#F4F4F8', sleeve: 'short', collar: 'crew' }) },
-  { id: 'tee-blue', name: 'Blue tee', slot: 'top', draw: top({ c: '#7FB0E0', sleeve: 'short', collar: 'crew' }) },
-  { id: 'tee-red', name: 'Red tee', slot: 'top', draw: top({ c: '#E57373', sleeve: 'short', collar: 'v' }) },
+  {
+    id: 'gamer-tee',
+    name: 'Gamer tee',
+    slot: 'top',
+    draw: (p, ctx) => {
+      top({ c: INK, sleeve: 'short', collar: 'crew' })(p, ctx)
+      p.map(13, 25, ['.CCCC.', 'CwCCaC', 'CCCCCC', 'C.CC.C'], { C: '#9FD35F', w: '#FFFFFF', a: PINK })
+    },
+  },
   { id: 'turtleneck', name: 'Cozy turtleneck', slot: 'top', draw: top({ c: '#F6F3EE', sleeve: 'baggy', collar: 'turtle' }) },
   { id: 'hoodie', name: 'Oversized hoodie', slot: 'top', unlock: { kind: 'hours', n: 5 }, draw: top({ c: '#6E8C99', sleeve: 'baggy', collar: 'hood' }) },
   {
-    id: 'jersey',
-    name: 'Team jersey',
+    id: 'hoodie-up',
+    name: 'Hood up',
     slot: 'top',
-    unlock: { kind: 'sessions', n: 10 },
-    draw: (p, ctx) => {
-      top({ c: '#FFA94D', sleeve: 'short', collar: 'v' })(p, ctx)
-      p.rect(8, 25, 3, 1, '#ffffff')
-      p.rect(21, 25, 3, 1, '#ffffff')
-      p.map(14, 26, ['WWWW', '...W', '..W.', '..W.'], { W: '#ffffff' })
-    },
+    unlock: { kind: 'hours', n: 8 },
+    draw: top({ c: '#4A5A78', sleeve: 'baggy', collar: 'hood' }),
+    over: hoodUp('#4A5A78'),
   },
   {
-    id: 'sailor',
-    name: 'Sailor top',
-    slot: 'top',
-    unlock: { kind: 'topics', n: 8 },
-    draw: top({ c: '#F4F4F8', sleeve: 'long', collar: 'sailor' }),
-  },
-  {
-    id: 'sweater',
-    name: 'Striped sweater',
-    slot: 'top',
-    unlock: { kind: 'sessions', n: 25 },
-    draw: top({ c: '#F2EFE6', sleeve: 'long', collar: 'crew', pattern: (_x, y) => (y % 4 < 2 ? null : '#E2776C') }),
-  },
-  {
-    id: 'flannel',
-    name: 'Flannel shirt',
+    id: 'cat-hoodie',
+    name: 'Cat hoodie',
     slot: 'top',
     unlock: { kind: 'longestStreak', n: 7 },
-    draw: top({ c: '#C0392B', sleeve: 'long', collar: 'v', pattern: (x, y) => (x % 3 === 0 || y % 3 === 0 ? '#7B1E1E' : null) }),
-  },
-  {
-    id: 'jacket',
-    name: 'Bomber jacket',
-    slot: 'top',
-    unlock: { kind: 'hours', n: 15 },
-    draw: top({ c: '#7D9AA8', sleeve: 'baggy', collar: 'open' }),
-  },
-  {
-    id: 'varsity',
-    name: 'Varsity jacket',
-    slot: 'top',
-    unlock: { kind: 'longestStreak', n: 14 },
     draw: (p, ctx) => {
-      top({ c: '#2F4A7A', sleeve: 'long', sleeveColor: '#EFE8D8', collar: 'crew' })(p, ctx)
-      p.map(12, 25, ['FFF', 'F..', 'FF.', 'F..'], { F: '#EFE8D8' })
+      top({ c: INK, sleeve: 'baggy', collar: 'hood' })(p, ctx)
+      p.map(13, 26, ['.p.p.', 'p...p', '.ppp.', '.ppp.'], { p: '#F4A6C8' })
+    },
+    over: hoodUp(INK, '#F4A6C8'),
+  },
+  { id: 'sailor', name: 'Sailor top', slot: 'top', unlock: { kind: 'topics', n: 8 }, draw: top({ c: '#F4F4F8', sleeve: 'long', collar: 'sailor' }) },
+  { id: 'jacket', name: 'Bomber jacket', slot: 'top', unlock: { kind: 'hours', n: 12 }, draw: top({ c: '#7D9AA8', sleeve: 'baggy', collar: 'open' }) },
+  {
+    id: 'techwear',
+    name: 'Techwear jacket',
+    slot: 'top',
+    unlock: { kind: 'sessions', n: 25 },
+    draw: (p, ctx) => {
+      top({ c: '#23262F', sleeve: 'baggy', collar: 'open' })(p, ctx)
+      for (let i = 0; i < 8; i++) p.px(12 + i, 24 + i, '#5B6070')
+      p.px(16, 28, '#C8CDD6')
+      p.rect(7, 31, 4, 1, NEON)
+      p.rect(21, 31, 4, 1, NEON)
     },
   },
   {
-    id: 'labcoat',
-    name: 'Lab coat',
+    id: 'cyber-suit',
+    name: 'Cyber bodysuit',
     slot: 'top',
     unlock: { kind: 'hours', n: 50 },
+    hides: ['bottom'],
     draw: (p, ctx) => {
-      top({ c: '#F4F6F8', sleeve: 'long', collar: 'v', bottom: 35 })(p, ctx)
-      p.rect(15, 24, 2, 8, '#7FB0E0')
-      p.rect(18, 28, 2, 1, '#B9C4CE')
-    },
-  },
-  {
-    id: 'gown',
-    name: 'Graduation gown',
-    slot: 'top',
-    unlock: { kind: 'modules', n: 3 },
-    draw: (p, ctx) => {
-      top({ c: '#2A2A36', sleeve: 'baggy', collar: 'v', bottom: 37 })(p, ctx)
-      p.rect(10, 32, 12, 6, '#2A2A36')
-      p.rect(14, 23, 4, 1, '#F5C542')
+      legs(p, '#1C2030')
+      top({ c: '#1C2030', sleeve: 'long', collar: 'turtle' })(p, ctx)
+      p.rect(15, 24, 1, 9, NEON)
+      p.rect(8, 27, 3, 1, NEON)
+      p.rect(21, 27, 3, 1, NEON)
+      p.rect(13, 34, 1, 5, NEON)
+      p.rect(18, 34, 1, 5, NEON)
+      p.rect(11, 32, 10, 1, PINK)
     },
   },
 
   // Bottoms
   { id: 'jeans', name: 'Jeans', slot: 'bottom', draw: (p) => legs(p, '#5B7BAA') },
-  {
-    id: 'shorts',
-    name: 'Shorts',
-    slot: 'bottom',
-    draw: (p) => legs(p, '#C9B48A', 35),
-  },
+  { id: 'shorts', name: 'Shorts', slot: 'bottom', draw: (p) => legs(p, '#C9B48A', 35) },
   {
     id: 'skirt',
     name: 'Pleated skirt',
@@ -503,17 +559,33 @@ export const ITEMS: Item[] = [
     },
   },
   {
-    id: 'joggers',
-    name: 'Joggers',
+    id: 'thigh-highs',
+    name: 'Thigh-highs',
     slot: 'bottom',
     unlock: { kind: 'hours', n: 2 },
     draw: (p) => {
-      legs(p, '#9A9AA6')
-      p.rect(12, 39, 3, 1, '#77777F')
-      p.rect(17, 39, 3, 1, '#77777F')
+      p.rect(11, 32, 10, 2, INK)
+      p.rect(12, 34, 3, 1, INK)
+      p.rect(17, 34, 3, 1, INK)
+      p.rect(12, 36, 3, 4, '#1C2030')
+      p.rect(17, 36, 3, 4, '#1C2030')
+      p.rect(12, 36, 3, 1, '#FFFFFF')
+      p.rect(17, 36, 3, 1, '#FFFFFF')
     },
   },
-  { id: 'trousers', name: 'Smart trousers', slot: 'bottom', unlock: { kind: 'sessions', n: 5 }, draw: (p) => legs(p, '#34384A') },
+  {
+    id: 'cyber-pants',
+    name: 'Cyber cargo pants',
+    slot: 'bottom',
+    unlock: { kind: 'sessions', n: 20 },
+    draw: (p) => {
+      legs(p, INK)
+      p.rect(12, 36, 3, 1, NEON)
+      p.rect(17, 36, 3, 1, NEON)
+      p.rect(11, 34, 1, 3, '#5B6070')
+      p.rect(20, 34, 1, 3, '#5B6070')
+    },
+  },
 
   // Shoes
   { id: 'sneakers', name: 'Sneakers', slot: 'shoes', draw: shoe('#F4F4F6', '#B9BCC6') },
@@ -528,9 +600,30 @@ export const ITEMS: Item[] = [
       p.px(21, 41, '#F7B8D0')
     },
   },
-  { id: 'boots', name: 'Chunky boots', slot: 'shoes', unlock: { kind: 'sessions', n: 15 }, draw: shoe('#24304A', '#141c2b', 35) },
-  { id: 'hightops', name: 'Red high-tops', slot: 'shoes', unlock: { kind: 'longestStreak', n: 7 }, draw: shoe('#E5383B', '#ffffff', 37) },
-  { id: 'gold-kicks', name: 'Golden sneakers', slot: 'shoes', unlock: { kind: 'longestStreak', n: 30 }, draw: shoe('#F5C542', '#FFF1B8') },
+  {
+    id: 'platforms',
+    name: 'Platform sneakers',
+    slot: 'shoes',
+    unlock: { kind: 'sessions', n: 10 },
+    draw: (p) => {
+      shoe('#F4F4F6', '#C86BD8', 37)(p)
+      p.rect(11, 40, 4, 1, '#FF8FC8')
+      p.rect(17, 40, 4, 1, '#FF8FC8')
+    },
+  },
+  {
+    id: 'boots',
+    name: 'Chunky boots',
+    slot: 'shoes',
+    unlock: { kind: 'sessions', n: 15 },
+    draw: (p) => {
+      shoe('#24304A', '#9AA3AE', 35)(p)
+      p.rect(11, 40, 4, 1, '#141C2B')
+      p.rect(17, 40, 4, 1, '#141C2B')
+      p.px(13, 37, NEON)
+      p.px(18, 37, NEON)
+    },
+  },
 
   // Head
   none('head'),
@@ -541,117 +634,108 @@ export const ITEMS: Item[] = [
     draw: (p) => p.map(20, 2, ['BB...BB', 'BBBkBBB', 'BBBkBBB', '.B.k.B.'], { B: RIBBON, k: shade(RIBBON, 0.3) }),
   },
   {
-    id: 'beanie',
-    name: 'Beanie',
-    slot: 'head',
-    unlock: { kind: 'hours', n: 1 },
-    draw: (p) => {
-      const t = tones('#E2776C')
-      p.rect(15, 0, 2, 2, '#ffffff')
-      p.rect(11, 2, 10, 1, t.c)
-      p.rect(9, 3, 14, 1, t.c)
-      p.rect(7, 4, 18, 4, t.c)
-      p.rect(6, 8, 20, 2, t.sh)
-      for (const x of [10, 13, 16, 19, 22]) p.rect(x, 4, 1, 4, t.sh)
-    },
-  },
-  {
-    id: 'cap',
-    name: 'Cap',
-    slot: 'head',
-    unlock: { kind: 'longestStreak', n: 3 },
-    draw: (p) => {
-      const t = tones('#4C8FE0')
-      p.rect(10, 3, 12, 1, t.c)
-      p.rect(8, 4, 16, 5, t.c)
-      p.rect(3, 9, 14, 1, t.sh)
-      p.rect(11, 5, 2, 2, '#ffffff')
-    },
-  },
-  {
     id: 'cat-ears',
     name: 'Cat ears',
     slot: 'head',
-    unlock: { kind: 'longestStreak', n: 5 },
+    unlock: { kind: 'longestStreak', n: 3 },
     draw: (p) =>
       [6, 21].forEach((x) => p.map(x, 0, ['#....', '##...', '#p#..', '#pp#.', '#ppp#'].map((r) => (x > 15 ? [...r].reverse().join('') : r)), { '#': '#24304A', p: '#F4A6C8' })),
   },
   {
-    id: 'headphones',
-    name: 'Headphones',
-    slot: 'head',
-    unlock: { kind: 'hours', n: 25 },
-    draw: (p) => {
-      const band = '#3A4250'
-      p.rect(10, 1, 12, 1, band)
-      p.rect(8, 2, 2, 1, band)
-      p.rect(22, 2, 2, 1, band)
-      p.rect(6, 3, 2, 1, band)
-      p.rect(24, 3, 2, 1, band)
-      p.rect(5, 4, 1, 6, band)
-      p.rect(26, 4, 1, 6, band)
-      for (const x of [2, 26]) {
-        p.rect(x, 10, 4, 7, '#5B6575')
-        p.rect(x + 1, 12, 2, 3, '#CFD6E0')
-      }
-    },
-  },
-  {
-    id: 'gradcap',
-    name: 'Graduation cap',
-    slot: 'head',
-    unlock: { kind: 'modules', n: 3 },
-    draw: (p) => {
-      p.rect(5, 2, 22, 2, '#2A2A36')
-      p.rect(9, 4, 14, 3, '#3A3A48')
-      p.rect(25, 4, 1, 5, '#F5C542')
-      p.rect(24, 9, 3, 1, '#F5C542')
-    },
-  },
-  {
-    id: 'wizard',
-    name: 'Night-owl wizard hat',
+    id: 'horns',
+    name: 'Demon horns',
     slot: 'head',
     unlock: { kind: 'nightSessions', n: 10 },
     draw: (p) => {
-      const t = tones('#6B4FD0')
-      p.map(9, 0, ['..........#', '.........##', '........###', '.......####', '......#####', '....#######', '..#########', '#############'].map((r) => r.padEnd(14, '.')), { '#': t.c })
-      p.rect(3, 8, 26, 2, t.sh)
-      p.px(14, 6, '#F5C542')
-      p.px(17, 3, '#F5C542')
+      const pal = { '#': '#2A1A2E', h: '#B04A6A' }
+      p.map(5, 0, ['#....', 'h#...', '.h#..', '..##.', '...##'], pal)
+      p.map(22, 0, ['....#', '...#h', '..#h.', '.##..', '##...'], pal)
     },
   },
   {
-    id: 'crown',
-    name: 'Crown',
+    id: 'halo',
+    name: 'Halo',
     slot: 'head',
-    unlock: { kind: 'hours', n: 100 },
-    draw: (p) => {
-      p.map(10, 0, ['#....##....#', '##..####..##', '############', '############', '############'], { '#': '#F5C542' })
-      p.rect(10, 4, 12, 1, '#C99A1E')
-      p.rect(15, 2, 2, 2, '#E5383B')
-      p.px(12, 3, '#6FA8DC')
-      p.px(19, 3, '#6FA8DC')
+    unlock: { kind: 'fiveStars', n: 10 },
+    draw: (_p, { fx }) => {
+      fx.rect(11, 0, 10, 1, '#FFF2A8')
+      fx.px(10, 1, '#FFE680')
+      fx.px(21, 1, '#FFE680')
+      fx.rect(11, 2, 10, 1, '#FFD24A')
     },
+  },
+  { id: 'headphones', name: 'Gaming headset', slot: 'head', unlock: { kind: 'hours', n: 25 }, draw: headset({ band: INK, cup: '#3A3F4F', ring: NEON, mic: true }) },
+  {
+    id: 'cat-headphones',
+    name: 'Cat headphones',
+    slot: 'head',
+    unlock: { kind: 'longestStreak', n: 14 },
+    draw: headset({ band: '#F4A6C8', cup: '#FBD3E3', ring: '#FFFFFF', ears: '#FF8FC8' }),
   },
 
-  // Glasses
+  // Face
   none('face'),
   { id: 'round-glasses', name: 'Round glasses', slot: 'face', unlock: { kind: 'hours', n: 10 }, draw: ring('#3A4250', false) },
-  { id: 'square-glasses', name: 'Square glasses', slot: 'face', unlock: { kind: 'topics', n: 10 }, draw: ring('#8A5A2B', true) },
+  { id: 'star-glasses', name: 'Star glasses', slot: 'face', unlock: { kind: 'fiveStars', n: 5 }, draw: ring('#FF6FAE', true) },
   {
-    id: 'sunglasses',
-    name: 'Early-bird shades',
+    id: 'visor',
+    name: 'Cyber visor',
     slot: 'face',
     unlock: { kind: 'earlySessions', n: 5 },
     draw: (p) => {
-      p.rect(9, 13, 7, 5, '#20222C')
-      p.rect(16, 13, 7, 5, '#20222C')
-      p.rect(10, 14, 2, 1, '#5C6170')
-      p.rect(17, 14, 2, 1, '#5C6170')
+      for (let y = 13; y <= 18; y++)
+        for (let x = 8; x <= 23; x++) p.px(x, y, mix(p.get(x, y) ?? '#20232C', NEON, 0.55))
+      p.rect(8, 12, 16, 1, INK)
+      p.rect(8, 19, 16, 1, INK)
+      p.rect(10, 14, 5, 1, '#C9F6FF')
     },
   },
-  { id: 'star-glasses', name: 'Star glasses', slot: 'face', unlock: { kind: 'fiveStars', n: 5 }, draw: ring('#FF6FAE', true) },
+  {
+    id: 'mask',
+    name: 'LED face mask',
+    slot: 'face',
+    unlock: { kind: 'topics', n: 10 },
+    draw: (p) => {
+      p.rect(10, 19, 12, 3, '#20232C')
+      p.rect(12, 22, 8, 1, '#20232C')
+      p.rect(9, 18, 1, 2, '#20232C')
+      p.rect(22, 18, 1, 2, '#20232C')
+      p.map(13, 20, ['N..N', '.NN.'], { N: NEON })
+    },
+  },
+  {
+    id: 'cyber-eye',
+    name: 'Robotic eye',
+    slot: 'face',
+    unlock: { kind: 'hours', n: 40 },
+    draw: (p) => {
+      p.map(16, 12, ['.MMMMM.', 'MkkkkkM', 'MkrrrkM', 'MkrRrkM', 'MkrrrkM', 'MkkkkkM', '.MMMMM.'], {
+        M: METAL, k: INK, r: '#FF4F6E', R: '#FFD1DA',
+      })
+      for (const [x, y] of [[23, 14], [24, 13], [25, 13]]) p.px(x, y, METAL_DK)
+    },
+  },
+
+  // Back
+  none('back'),
+  { id: 'cat-tail', name: 'Cat tail', slot: 'back', unlock: { kind: 'hours', n: 1 }, draw: (p) => {
+    for (const [x, y] of [[20, 34], [22, 34], [24, 33], [26, 32], [28, 31], [30, 30], [31, 28], [32, 26], [32, 24], [31, 22], [30, 21]])
+      p.rect(x, y, 2, 2, '#24304A')
+  } },
+  { id: 'angel-wings', name: 'Angel wings', slot: 'back', unlock: { kind: 'hours', n: 30 }, draw: wings(ANGEL, { W: '#FFFFFF', S: '#D9CCF2' }, 13) },
+  { id: 'demon-wings', name: 'Demon wings', slot: 'back', unlock: { kind: 'nightSessions', n: 20 }, draw: wings(BAT, { '#': '#2A1A2E', m: '#6B3F6E' }, 14) },
+  { id: 'cyber-wings', name: 'Cyber wings', slot: 'back', unlock: { kind: 'hours', n: 100 }, draw: wings(CYBER_WING, { F: INK, N: NEON, n: '#B8F5FF' }, 15) },
+  {
+    id: 'robo-arm',
+    name: 'Robotic arm',
+    slot: 'back',
+    unlock: { kind: 'longestStreak', n: 30 },
+    draw: () => {},
+    over: (p) => {
+      p.rect(20, 23, 5, 2, METAL_DK)
+      p.map(21, 25, ['PPP', 'PmP', 'PPP', '.j.', 'PPP', 'PlP', 'PPP', 'C.C', 'C.C'], { P: METAL, m: METAL_DK, j: '#4A5163', l: NEON, C: METAL_DK })
+    },
+  },
 
   // Hands
   none('held'),
@@ -686,17 +770,6 @@ export const ITEMS: Item[] = [
     draw: (p) => p.map(23, 27, ['sss', 'DDD', 'DLD', 'DLD', 'DLD', 'DDD', 'sss'], { s: '#9AA3AE', D: '#24343A', L: '#9FD35F' }),
   },
   {
-    id: 'pencil',
-    name: 'Pencil',
-    slot: 'held',
-    unlock: { kind: 'sessions', n: 10 },
-    draw: (p) => {
-      p.px(23, 31, '#3A4250')
-      for (const [x, y] of [[24, 30], [25, 29], [26, 28], [27, 27]]) p.px(x, y, '#F5C542')
-      p.px(28, 26, '#F4A6C8')
-    },
-  },
-  {
     id: 'console',
     name: 'Handheld console',
     slot: 'held',
@@ -704,22 +777,19 @@ export const ITEMS: Item[] = [
     draw: (p) => p.map(22, 26, ['CCCCC', 'CsssC', 'CsgsC', 'CsssC', 'CCCCC', 'CbCaC', 'CCCCC'], { C: '#DCE2EA', s: '#8FB86A', g: '#C9E6A5', b: '#4A4E6A', a: '#E05A5A' }),
   },
   {
-    id: 'plant',
-    name: 'Desk plant',
+    id: 'plushie',
+    name: 'Cat plushie',
     slot: 'held',
-    unlock: { kind: 'topics', n: 5 },
-    draw: (p) => {
-      p.map(23, 26, ['.g.g.', 'gGgGg', '.gGg.', '..G..'], { g: '#4CAF6E', G: '#7ED18F' })
-      p.rect(23, 30, 5, 3, '#C8693A')
-      p.rect(23, 30, 5, 1, '#A85530')
-    },
+    unlock: { kind: 'modules', n: 3 },
+    draw: (p) => p.map(22, 25, ['#...#', '##.##', '#####', '#e#e#', '##p##', '#####', '.#.#.'], { '#': '#F6E7D7', e: INK, p: '#F4A6C8' }),
   },
   {
-    id: 'trophy',
-    name: 'Trophy',
+    id: 'controller',
+    name: 'Game controller',
     slot: 'held',
     unlock: { kind: 'sessions', n: 50 },
-    draw: (p) => p.map(22, 25, ['YYYYYY', 'YyYYYY', '.YYYY.', '..YY..', '..YY..', '.YYYY.'], { Y: '#F5C542', y: '#FFF1B8' }),
+    draw: (p) =>
+      p.map(20, 28, ['.GGGGGGG.', 'GGwGGGaGG', 'GwwwGGGbG', 'GGwGGGGGG', 'GGG...GGG'], { G: '#3A3F4F', w: '#C8CDD6', a: NEON, b: PINK }),
   },
 ]
 
@@ -730,6 +800,7 @@ export const DEFAULT_EQUIPPED: Record<Slot, string> = {
   head: 'head-none',
   face: 'face-none',
   held: 'held-none',
+  back: 'back-none',
 }
 
 export const itemById = (id: string): Item | undefined => ITEMS.find((i) => i.id === id)

@@ -1,6 +1,8 @@
 /** Tiny pixel canvas used to compose the avatar from layers. */
 
-export const W = 32
+export const W = 40
+/** Art is drawn in a 32-wide space centred on the canvas; the 4px margins leave room for wings and tails. */
+export const DX = 4
 export const H = 44
 /** Deep blue-grey line, like the soft outlines of anime pixel art (never pure black). */
 export const OUTLINE = '#1e2a3a'
@@ -18,6 +20,8 @@ export interface Painter {
   /** Clear a pixel (e.g. to round a corner). */
   clear: (x: number, y: number) => void
   has: (x: number, y: number) => boolean
+  /** Colour already painted at a pixel, if any (for see-through effects like a visor). */
+  get: (x: number, y: number) => string | null
 }
 
 export const painter = (g: Grid): Painter => {
@@ -41,16 +45,18 @@ export const painter = (g: Grid): Painter => {
       if (inside(x, y)) g[y][x] = null
     },
     has: (x, y) => inside(x, y) && g[y][x] !== null,
+    get: (x, y) => (inside(x, y) ? g[y][x] : null),
   }
 }
 
-/** A painter that draws everything `dy` rows lower (used to place the body under the head). */
-export const shifted = (p: Painter, dy: number): Painter => ({
-  px: (x, y, c) => p.px(x, y + dy, c),
-  rect: (x, y, w, h, c) => p.rect(x, y + dy, w, h, c),
-  map: (x, y, rows, pal) => p.map(x, y + dy, rows, pal),
-  clear: (x, y) => p.clear(x, y + dy),
-  has: (x, y) => p.has(x, y + dy),
+/** A painter that draws everything offset by (dx, dy). */
+export const shifted = (p: Painter, dx: number, dy: number): Painter => ({
+  px: (x, y, c) => p.px(x + dx, y + dy, c),
+  rect: (x, y, w, h, c) => p.rect(x + dx, y + dy, w, h, c),
+  map: (x, y, rows, pal) => p.map(x + dx, y + dy, rows, pal),
+  clear: (x, y) => p.clear(x + dx, y + dy),
+  has: (x, y) => p.has(x + dx, y + dy),
+  get: (x, y) => p.get(x + dx, y + dy),
 })
 
 /**

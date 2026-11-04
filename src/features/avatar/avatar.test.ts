@@ -64,21 +64,26 @@ describe('progress', () => {
     expect(p).toMatchObject({ hours: 3, sessions: 3, longestStreak: 3, fiveStars: 2, nightSessions: 1, earlySessions: 1, modules: 1 })
   })
   it('unlocks items by threshold', () => {
-    expect(isUnlocked(itemById('beanie')!, p)).toBe(true) // 1h
-    expect(isUnlocked(itemById('joggers')!, p)).toBe(true) // 2h
+    expect(isUnlocked(itemById('cat-tail')!, p)).toBe(true) // 1h
+    expect(isUnlocked(itemById('thigh-highs')!, p)).toBe(true) // 2h
     expect(isUnlocked(itemById('hoodie')!, p)).toBe(false) // 5h
-    expect(isUnlocked(itemById('cap')!, p)).toBe(true) // 3-day streak
+    expect(isUnlocked(itemById('cat-ears')!, p)).toBe(true) // 3-day streak
     expect(ruleProgressLabel(itemById('hoodie')!.unlock!, p)).toBe('3 / 5h')
   })
   it('lists earned items not yet seen', () => {
-    const ids = unseenUnlocks(p, ['beanie']).map((i) => i.id)
+    const ids = unseenUnlocks(p, ['cat-tail']).map((i) => i.id)
     expect(ids).toContain('coffee')
-    expect(ids).not.toContain('beanie')
+    expect(ids).not.toContain('cat-tail')
     expect(ids).not.toContain('tee-white') // free items are never "new"
   })
+  it('hides bottoms under a one-piece', () => {
+    const look = { ...DEFAULT_AVATAR, equipped: { ...DEFAULT_EQUIPPED, top: 'cyber-suit', bottom: 'skirt' } }
+    const pink = composeAvatar(look, 'idle').body.filter((r) => r.color.toUpperCase() === '#E58FB0')
+    expect(pink).toHaveLength(0)
+  })
   it('falls back to defaults for locked or unknown items', () => {
-    const eq = resolveEquipped({ top: 'hoodie', head: 'beanie', held: 'nope', face: 'beanie' as string } as Record<Slot, string>, p)
-    expect(eq).toMatchObject({ top: 'tee-white', head: 'beanie', held: 'held-none', face: 'face-none' })
+    const eq = resolveEquipped({ top: 'hoodie', head: 'cat-ears', held: 'nope', face: 'cat-ears' } as Record<Slot, string>, p)
+    expect(eq).toMatchObject({ top: 'tee-white', head: 'cat-ears', held: 'held-none', face: 'face-none', back: 'back-none' })
   })
 })
 
@@ -98,8 +103,8 @@ describe('mood', () => {
 
 describe('parseAvatar', () => {
   it('accepts a valid avatar and fills missing slots', () => {
-    const a = parseAvatar({ name: '  Bit ', skin: 2, hairStyle: 'bob', hairColor: 3, equipped: { top: 'hoodie' }, seen: ['beanie', 4] })
-    expect(a).toMatchObject({ name: 'Bit', skin: 2, hairStyle: 'bob', equipped: { top: 'hoodie', bottom: 'jeans' }, seen: ['beanie'] })
+    const a = parseAvatar({ name: '  Bit ', skin: 2, hairStyle: 'bob', hairColor: 3, equipped: { top: 'hoodie' }, seen: ['cat-tail', 4] })
+    expect(a).toMatchObject({ name: 'Bit', skin: 2, hairStyle: 'bob', equipped: { top: 'hoodie', bottom: 'jeans' }, seen: ['cat-tail'] })
   })
   it('keeps hair styles from the first version of the character', () => {
     expect(parseAvatar({ skin: 0, hairStyle: 'curly', hairColor: 0, equipped: {} })?.hairStyle).toBe('curly')

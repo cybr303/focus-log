@@ -31,5 +31,5 @@
 }
 
 /* Study buddy next to the session clock */
-.study-buddy { position: absolute; left: 0; bottom: 14px; z-index: 1; }
+.study-buddy { position: absolute; left: -10px; bottom: 14px; z-index: 1; pointer-events: none; }
 .session-clock.has-hours { font-size: 60px; }
