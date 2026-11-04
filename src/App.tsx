@@ -10,6 +10,7 @@ import { ModuleDetailPage } from './pages/ModuleDetailPage'
 import { ModulesPage } from './pages/ModulesPage'
 import { SessionFormPage } from './pages/SessionFormPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { WardrobePage } from './pages/WardrobePage'
 
 export default function App() {
   const { pathname } = useLocation()
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/wardrobe" element={<WardrobePage />} />
         <Route path="*" element={<HomePage />} />
       </Routes>
       <TabBar />

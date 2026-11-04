@@ -147,4 +147,4 @@ export const useStore = create<Store>()(
 export const selectModule = (id: ID | undefined) => (s: Store) => s.modules.find((m) => m.id === id)
 
 // Dev-only handle for debugging in the browser console.
-if (import.meta.env.DEV) (window as unknown as { __store: typeof useStore }).__store = useStore
+if (import.meta.env.DEV && typeof window !== 'undefined') (window as unknown as { __store: typeof useStore }).__store = useStore

@@ -7,6 +7,7 @@ import { formatClock, formatDuration } from '../../lib/time'
 import type { ActiveSession, ID } from '../../lib/types'
 import { useNow } from '../../lib/useNow'
 import { selectModule, useStore } from '../../store/store'
+import { StudyBuddy } from '../avatar/StudyBuddy'
 import { BeatBar } from './BeatBar'
 import { FinishSheet } from './FinishSheet'
 import { CheckCircleGlyph } from './glyphs'
@@ -104,7 +105,8 @@ function Running({ active, onSaved }: { active: ActiveSession; onSaved: (ms: num
           className="session-glow"
           style={{ background: `radial-gradient(closest-side, ${tint(color, 0.55)}, rgba(100, 210, 255, 0.18) 55%, transparent)` }}
         />
-        <div className="session-clock" aria-live="off">{clock}</div>
+        <StudyBuddy bookColor={color} />
+        <div className={`session-clock ${elapsed >= 3_600_000 ? 'has-hours' : ''}`} aria-live="off">{clock}</div>
         {paused && <div className="session-paused">Paused</div>}
       </div>
 

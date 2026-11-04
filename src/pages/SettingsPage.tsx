@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { DEFAULT_AVATAR, parseAvatar, useAvatar, type AvatarData } from '../features/avatar/avatarStore'
 import { ConfirmSheet } from '../features/modules/ConfirmSheet'
 import '../features/modules/modules.css'
 import { backupFilename, buildBackup, parseBackup, summarizeData } from '../lib/backup'
@@ -16,7 +17,7 @@ export function SettingsPage() {
   const replaceAll = useStore((s) => s.replaceAll)
 
   const fileRef = useRef<HTMLInputElement>(null)
-  const [pending, setPending] = useState<{ data: AppData; fileName: string } | null>(null)
+  const [pending, setPending] = useState<{ data: AppData; avatar: AvatarData | null; fileName: string } | null>(null)
   const [confirmErase, setConfirmErase] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
 
@@ -24,7 +25,10 @@ export function SettingsPage() {
   const isEmpty = modules.length === 0 && sessions.length === 0 && !active
 
   const exportData = () => {
-    const blob = new Blob([JSON.stringify(buildBackup(current), null, 2)], { type: 'application/json' })
+    // The character rides along in the backup; older app versions simply ignore the extra field.
+    const { name, skin, hairStyle, hairColor, equipped, seen } = useAvatar.getState()
+    const backup = { ...buildBackup(current), avatar: { name, skin, hairStyle, hairColor, equipped, seen } }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -49,7 +53,13 @@ export function SettingsPage() {
     const result = parseBackup(text)
     if (!result.ok) return setNotice({ kind: 'error', text: result.error })
     setNotice(null)
-    setPending({ data: result.data, fileName: file.name })
+    let avatar: AvatarData | null = null
+    try {
+      avatar = parseAvatar((JSON.parse(text) as { avatar?: unknown }).avatar)
+    } catch {
+      // parseBackup already accepted the file; a missing or bad avatar just keeps the current one
+    }
+    setPending({ data: result.data, avatar, fileName: file.name })
   }
 
   return (
@@ -124,6 +134,7 @@ export function SettingsPage() {
           confirmLabel="Replace my data"
           onConfirm={() => {
             replaceAll(pending.data)
+            if (pending.avatar) useAvatar.getState().replaceAvatar(pending.avatar)
             setNotice({ kind: 'ok', text: `Imported ${summarizeData(pending.data)}.` })
           }}
           onClose={() => setPending(null)}
@@ -141,6 +152,7 @@ export function SettingsPage() {
           confirmLabel="Erase everything"
           onConfirm={() => {
             replaceAll({ modules: [], sessions: [], active: null })
+            useAvatar.getState().replaceAvatar(DEFAULT_AVATAR)
             setNotice({ kind: 'ok', text: 'All data erased.' })
           }}
           onClose={() => setConfirmErase(false)}

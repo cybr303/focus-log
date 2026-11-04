@@ -1,0 +1,35 @@
+/* Pixel character. Animations use steps() so movement snaps to whole pixels. */
+.px-avatar { display: block; overflow: visible; image-rendering: pixelated; }
+.px-avatar .px-body { transform-box: view-box; }
+
+.px-avatar.mood-idle .px-body,
+.px-avatar.mood-happy .px-body { animation: px-bob 2.4s steps(1) infinite; }
+.px-avatar.mood-study .px-body { animation: px-bob 3.2s steps(1) infinite; }
+.px-avatar.mood-celebrate .px-body { animation: px-hop 0.9s steps(1) infinite; }
+.px-avatar.mood-celebrate .px-fx { animation: px-blink 0.9s steps(1) infinite; }
+.px-avatar.mood-sleepy .px-fx { animation: px-float 2.4s steps(3) infinite; }
+
+@keyframes px-bob { 50% { transform: translateY(1px); } }
+@keyframes px-hop { 0%, 60% { transform: translateY(0); } 30% { transform: translateY(-2px); } 45% { transform: translateY(-1px); } }
+@keyframes px-blink { 50% { opacity: 0.3; } }
+@keyframes px-float { 0% { transform: translateY(1px); opacity: 0.4; } 100% { transform: translateY(-2px); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .px-avatar .px-body, .px-avatar .px-fx { animation: none !important; }
+}
+
+/* Home: title row with the character */
+.home-title-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 4px 0 20px; }
+.home-title-row .page-title { margin: 0; }
+.home-speech { margin: 6px 0 0; font-size: 15px; color: var(--text-2); }
+.home-avatar { position: relative; flex-shrink: 0; margin-bottom: -6px; }
+.home-avatar:active { transform: scale(0.95); }
+.home-avatar-badge {
+  position: absolute; top: 2px; right: -4px; min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 999px; background: var(--danger); color: #fff; font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* Study buddy next to the session clock */
+.study-buddy { position: absolute; left: 0; bottom: 14px; z-index: 1; }
+.session-clock.has-hours { font-size: 60px; }

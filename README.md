@@ -10,6 +10,7 @@ A study-session tracker that installs to your phone's home screen (PWA). Organis
 - **History:** sessions grouped by day, filterable by module; edit, delete, or log a past session by hand.
 - **Calendar:** a monthly heat map of study time, plus exam dates.
 - **Home and Insights:** streaks, today and this week, weekly volume, time per module and topic, best time of day, weekday pattern and productivity trend.
+- **Pixel character:** a customisable study buddy on Home and next to the session timer. You earn clothes and accessories by studying (hours, sessions, streaks, night-owl and early-bird sessions). It reacts to how you're doing, and its progress is computed from your sessions, so nothing extra can get out of sync. It's stored apart from the study data, under its own key.
 - **Backup:** JSON export and import in Settings.
 
 A study day runs from 4:00 AM to 3:59 AM, so a 1 AM session counts toward the previous day.

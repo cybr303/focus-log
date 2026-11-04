@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { HomeAvatar } from '../features/avatar/HomeAvatar'
 import { ExamCountdown } from '../features/history/ExamCountdown'
 import { RecentSessions } from '../features/history/RecentSessions'
 import { ActiveSessionCard } from '../features/session/ActiveSessionCard'
@@ -15,7 +16,7 @@ export function HomePage() {
           <Icon name="gear" />
         </Link>
       </div>
-      <h1 className="page-title" style={{ marginTop: 4 }}>Overview</h1>
+      <HomeAvatar />
       <StreakToday />
       <StatCards />
       <ExamCountdown />
